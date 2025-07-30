@@ -10,7 +10,7 @@ export default function Page() {
           <span className="text-2xl font-semibold text-[#232323]">HD</span>
         </div>
 
-        <div className="flex items-center justify-center space-x-2 mb-8 block md:hidden">
+        <div className="flex items-center justify-center space-x-2 mb-8  md:hidden">
           <Image src="/logo.svg" alt="Logo" width={24} height={24} />
           <span className="text-xl font-bold text-[#232323]">HD</span>
         </div>

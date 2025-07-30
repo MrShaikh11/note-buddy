@@ -2,7 +2,6 @@
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
 import { Trash2 } from "lucide-react";
 import Image from "next/image";
 import { useState } from "react";

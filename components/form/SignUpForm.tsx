@@ -3,7 +3,7 @@
 import * as z from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-
+import axios from "axios";
 import { format } from "date-fns";
 import { CalendarIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -25,6 +25,7 @@ import {
 
 import { Input } from "@/components/ui/input";
 import Link from "next/link";
+import { useState } from "react";
 
 const formSchema = z.object({
   name: z.string().min(2, { message: "Name must be at least 2 characters." }),
@@ -44,9 +45,26 @@ export default function SignUpForm() {
     },
   });
 
-  function onSubmit(values: z.infer<typeof formSchema>) {
-    console.log(values);
-  }
+  const [otpSent, setOtpSent] = useState(false);
+  const [otp, setOtp] = useState("");
+  const [message, setMessage] = useState("");
+
+  const onSubmit = async (values: z.infer<typeof formSchema>) => {
+    try {
+      const res = await axios.post("/api/send-otp", {
+        email: values.email,
+      });
+
+      if (res.data.success) {
+        setOtpSent(true);
+        setMessage("OTP sent to your email.");
+      } else {
+        setMessage("Failed to send OTP.");
+      }
+    } catch (error) {
+      setMessage("Error sending OTP.");
+    }
+  };
 
   return (
     <Form {...form}>
@@ -135,7 +153,7 @@ export default function SignUpForm() {
         </Button>
 
         <p className="text-sm text-center">
-          Already have an account??{" "}
+          Already have an account??
           <Link href="/sign-in" className="text-blue-600 underline">
             Sign in
           </Link>
