@@ -1,18 +1,17 @@
 import nodemailer from "nodemailer";
 
 const transporter = nodemailer.createTransport({
-  host: "sandbox.smtp.mailtrap.io",
-  port: 587,
+  service: "gmail",
   auth: {
-    user: process.env.MAILTRAP_USER,
-    pass: process.env.MAILTRAP_PASSWORD,
+    user: process.env.GMAIL_USER,
+    pass: process.env.GMAIL_APP_PASS,
   },
 });
 
 const sendOTP = async (email: string, otp: string) => {
   try {
     const info = await transporter.sendMail({
-      from: '"Your App Name" <no-reply@yourapp.com>',
+      from: `"Your App Name" <${process.env.GMAIL_USER}>`,
       to: email,
       subject: "Your OTP Code",
       text: `Your OTP code is: ${otp}`,
