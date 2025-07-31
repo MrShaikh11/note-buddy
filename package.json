@@ -20,6 +20,8 @@
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
     "input-otp": "^1.4.2",
+    "jose": "^6.0.12",
+    "jsonwebtoken": "^9.0.2",
     "lucide-react": "^0.533.0",
     "mongoose": "^8.16.5",
     "next": "15.4.4",
@@ -37,6 +39,7 @@
   "devDependencies": {
     "@eslint/eslintrc": "^3",
     "@tailwindcss/postcss": "^4",
+    "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^20",
     "@types/nodemailer": "^6.4.17",
     "@types/react": "^19",
