@@ -78,12 +78,16 @@ export default function HomePage() {
     }
   };
 
-  // Optionally implement delete from DB here
-  // For now, just remove from UI
-  const handleDelete = (index: number) => {
-    const updated = [...notes];
-    updated.splice(index, 1);
-    setNotes(updated);
+  const handleDelete = async (id: string) => {
+    const res = await fetch("/api/delete-note", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id }),
+    });
+    const data = await res.json();
+    if (data.success) {
+      setNotes((prev) => prev.filter((note) => note._id !== id));
+    }
   };
 
   const handleSignOut = async () => {
@@ -184,9 +188,10 @@ export default function HomePage() {
         <div className="flex flex-col gap-3">
           {notes.map((note, index) => (
             <NoteCard
+              id={note._id}
               key={note._id}
               content={note.content}
-              onDelete={() => handleDelete(index)}
+              onDelete={handleDelete}
             />
           ))}
         </div>

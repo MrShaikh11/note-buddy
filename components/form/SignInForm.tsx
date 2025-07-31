@@ -226,7 +226,7 @@ export default function SignInForm() {
           <Button
             type="submit"
             disabled={isLoading}
-            className="w-full bg-[#367AFF] hover:bg-blue-400 cursor-pointer"
+            className="w-full bg-[#367AFF] hover:bg-blue-400 cursor-pointer  "
           >
             {isLoading ? (
               <div className="flex items-center justify-center gap-2">
@@ -235,7 +235,7 @@ export default function SignInForm() {
                   alt="loader"
                   width={24}
                   height={24}
-                  className="animate-spin"
+                  className="animate-spin "
                 />
                 <span>Loading...</span>
               </div>
