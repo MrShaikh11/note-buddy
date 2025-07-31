@@ -17,19 +17,16 @@
 
 ## 📸 Screenshots
 
-> ✨ Add screenshots here (Login Page, Notes Page, Create Note, etc.)
-
-<!-- Example:
-![Login Page](./screenshots/login.png)
-![Notes Dashboard](./screenshots/dashboard.png)
--->
+Example:
+![Login Page](/screenshots/login.png)
+![Notes Dashboard](/screenshots/dashboard.png)
 
 ---
 
 ## 🚀 Live Demo
 
-> 🌐 Hosted link (if deployed):  
-> [Click here to visit NoteBuddy](https://your-deployment-url.com)
+> 🌐 Hosted link :  
+> [Click here to visit NoteBuddy](https://note-buddy-zeta.vercel.app/)
 
 ---
 
