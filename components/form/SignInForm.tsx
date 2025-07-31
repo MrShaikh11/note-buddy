@@ -231,7 +231,7 @@ export default function SignInForm() {
             {isLoading ? (
               <div className="flex items-center justify-center gap-2">
                 <Image
-                  src="/loader.svg"
+                  src="/logo.svg"
                   alt="loader"
                   width={24}
                   height={24}

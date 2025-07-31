@@ -1,20 +1,91 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Trash2 } from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import {
+  Dialog,
+  DialogTrigger,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogClose,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import NoteCard from "./NoteCard";
 
 export default function HomePage() {
-  const [notes, setNotes] = useState(["Note 1", "Note 2"]);
+  const [notes, setNotes] = useState<{ _id: string; content: string }[]>([]);
+  const [user, setUser] = useState<{ name: string; email: string } | null>(
+    null
+  );
+  const [isLoading, setIsLoading] = useState(true);
+  const [newNote, setNewNote] = useState("");
+  const [addingNote, setAddingNote] = useState(false);
   const router = useRouter();
+
+  // Fetch user and notes on mount
+  useEffect(() => {
+    async function fetchUserAndNotes() {
+      setIsLoading(true);
+      try {
+        // Fetch user
+        const userRes = await fetch("/api/get-user");
+        const userData = await userRes.json();
+        if (userData.success) {
+          setUser(userData.user);
+        } else {
+          router.push("/sign-in");
+          return;
+        }
+        // Fetch notes
+        const notesRes = await fetch("/api/add-note");
+        const notesData = await notesRes.json();
+        if (notesData.success) {
+          setNotes(notesData.notes);
+        }
+      } catch (err) {
+        router.push("/sign-in");
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    fetchUserAndNotes();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Add note to DB
+  const handleAddNote = async () => {
+    if (!newNote.trim()) return;
+    setAddingNote(true);
+    try {
+      const res = await fetch("/api/add-note", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content: newNote }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setNotes((prev) => [data.note, ...prev]);
+        setNewNote("");
+      }
+    } finally {
+      setAddingNote(false);
+    }
+  };
+
+  // Optionally implement delete from DB here
+  // For now, just remove from UI
   const handleDelete = (index: number) => {
     const updated = [...notes];
     updated.splice(index, 1);
     setNotes(updated);
   };
+
   const handleSignOut = async () => {
     await fetch("/api/logout", { method: "POST" });
     router.push("/sign-in");
@@ -40,34 +111,83 @@ export default function HomePage() {
       {/* Welcome Card */}
       <Card className="w-full max-w-md shadow">
         <CardContent className="py-4">
-          <p className="text-lg font-semibold">Welcome, Jonas Kahnwald !</p>
-          <p className="text-sm text-muted-foreground">
-            Email: xxxxxx@xxxx.com
-          </p>
+          {isLoading ? (
+            <div className="flex items-center justify-center gap-2">
+              <Image
+                src="/logo.svg"
+                alt="loader"
+                width={24}
+                height={24}
+                className="animate-spin"
+              />
+              <span>Loading...</span>
+            </div>
+          ) : (
+            <>
+              <p className="text-lg font-semibold">
+                Welcome, {user ? user.name : "Unknown"}!
+              </p>
+              <p className="text-sm text-muted-foreground">
+                Email: {user ? user.email : "Unknown"}
+              </p>
+            </>
+          )}
         </CardContent>
       </Card>
 
-      {/* Create Note Button */}
-      <Button className="mt-6 w-full max-w-md">Create Note</Button>
+      {/* Create Note Button with Dialog */}
+      <Dialog>
+        <DialogTrigger asChild>
+          <Button className="mt-6 w-full max-w-md">Create Note</Button>
+        </DialogTrigger>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add a new note</DialogTitle>
+          </DialogHeader>
+          <Input
+            placeholder="Enter note"
+            value={newNote}
+            onChange={(e) => setNewNote(e.target.value)}
+            className="my-4"
+            disabled={addingNote}
+          />
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button
+                onClick={handleAddNote}
+                disabled={!newNote.trim() || addingNote}
+                className="w-full"
+              >
+                {addingNote ? (
+                  <span className="flex items-center gap-2">
+                    <Image
+                      src="/logo.svg"
+                      alt="loader"
+                      width={20}
+                      height={20}
+                      className="animate-spin"
+                    />
+                    Adding...
+                  </span>
+                ) : (
+                  "Add Note"
+                )}
+              </Button>
+            </DialogClose>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Notes Section */}
       <div className="w-full max-w-md mt-8">
         <h2 className="text-lg font-medium mb-3">Notes</h2>
         <div className="flex flex-col gap-3">
           {notes.map((note, index) => (
-            <Card
-              key={index}
-              className="flex items-center justify-between px-4 py-3"
-            >
-              <span>{note}</span>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => handleDelete(index)}
-              >
-                <Trash2 className="w-4 h-4 text-red-500" />
-              </Button>
-            </Card>
+            <NoteCard
+              key={note._id}
+              content={note.content}
+              onDelete={() => handleDelete(index)}
+            />
           ))}
         </div>
       </div>
