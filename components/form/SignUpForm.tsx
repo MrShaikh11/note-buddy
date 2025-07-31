@@ -42,6 +42,8 @@ export default function SignUpForm() {
   const [isLoading, setIsLoading] = useState(false);
   const [resendDisabled, setResendDisabled] = useState(false);
   const [countdown, setCountdown] = useState(0);
+  const [calendarOpen, setCalendarOpen] = useState(false);
+
   const router = useRouter();
 
   const form = useForm<SignUpFormData>({
@@ -201,7 +203,7 @@ export default function SignUpForm() {
             render={({ field }) => (
               <FormItem className="flex flex-col">
                 <FormLabel>Date of birth</FormLabel>
-                <Popover>
+                <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
                   <PopoverTrigger asChild>
                     <FormControl>
                       <Button
@@ -211,6 +213,7 @@ export default function SignUpForm() {
                           !field.value && "text-muted-foreground"
                         )}
                         disabled={otpSent && isLoading}
+                        onClick={() => setCalendarOpen(true)}
                       >
                         <CalendarIcon className="h-4 w-4" />
                         {field.value ? (
@@ -225,7 +228,10 @@ export default function SignUpForm() {
                     <Calendar
                       mode="single"
                       selected={field.value}
-                      onSelect={field.onChange}
+                      onSelect={(date) => {
+                        field.onChange(date);
+                        setCalendarOpen(false); // Close popover after selecting
+                      }}
                       disabled={(date) =>
                         date > new Date() || date < new Date("1900-01-01")
                       }
@@ -313,7 +319,7 @@ export default function SignUpForm() {
             {isLoading ? (
               <div className="flex items-center justify-center gap-2">
                 <Image
-                  src="/logo.svg"
+                  src="/loader.svg"
                   alt="loader"
                   width={24}
                   height={24}
