@@ -17,39 +17,145 @@ import { Input } from "@/components/ui/input";
 import Link from "next/link";
 import { Button } from "../ui/button";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "../ui/input-otp";
-
-const formSchema = z.object({
-  name: z.string().min(2, { message: "Name must be at least 2 characters." }),
-  email: z.string().email({ message: "Invalid email address." }),
-  dob: z.date({
-    message: "A date of birth is required.",
-  }),
-  otp: z
-    .string()
-    .min(4, { message: "OTP must be at least 4 digits." })
-    .max(6, { message: "OTP must be at most 6 digits." })
-    .regex(/^\d+$/, { message: "OTP must contain only numbers." }),
-});
+import { signInSchema } from "@/lib/validation";
+import { useState } from "react";
+import { toast } from "sonner";
+import axios from "axios";
+import { useRouter } from "next/navigation";
+import Image from "next/image";
 
 export default function SignInForm() {
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
+  const [otpSent, setOtpSent] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [resendDisabled, setResendDisabled] = useState(false);
+  const [countdown, setCountdown] = useState(0);
+  const router = useRouter();
+
+  const form = useForm<z.infer<typeof signInSchema>>({
+    resolver: zodResolver(signInSchema),
     defaultValues: {
-      name: "",
-      dob: undefined,
       email: "",
       otp: "",
     },
   });
 
-  function onSubmit(values: z.infer<typeof formSchema>) {
-    console.log(values);
-  }
+  async function onSubmit(values: z.infer<typeof signInSchema>) {
+    setIsLoading(true);
+    try {
+      if (!otpSent) {
+        // check user
+        const checkRes = await axios.post("/api/check-user", {
+          email: values.email,
+        });
 
+        if (!checkRes.data.exists) {
+          form.setError("email", {
+            type: "manual",
+            message: "Email not registered. Please sign up.",
+          });
+          setIsLoading(false);
+          return;
+        }
+
+        // send OTP
+        const otpRes = await axios.post("/api/send-otp", {
+          email: values.email,
+        });
+
+        if (otpRes.data.success) {
+          setOtpSent(true);
+          startResendCountdown();
+          toast("OTP Sent", {
+            description: "Please check your email for the verification code.",
+          });
+        } else {
+          toast.warning("Error", {
+            description: otpRes.data.message || "Failed to send OTP.",
+          });
+        }
+      } else {
+        // verify OTP
+        const verifyRes = await axios.post("/api/verify-otp", {
+          email: values.email,
+          code: values.otp,
+          action: "signin",
+        });
+
+        if (verifyRes.data.success) {
+          toast.success("Success", {
+            description: "Your account has been created successfully!",
+          });
+          router.push("/");
+        } else {
+          toast.error("Error", {
+            description:
+              verifyRes.data.message || "Invalid OTP. Please try again.",
+          });
+        }
+      }
+    } catch (err) {
+      console.error("Error:", err);
+      form.setError("email", {
+        type: "manual",
+        message: "Something went wrong. Please try again.",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  }
+  const handleResendOTP = async () => {
+    if (resendDisabled) return;
+
+    setIsLoading(true);
+    try {
+      const values = form.getValues();
+      const res = await axios.post("/api/send-otp", {
+        email: values.email,
+      });
+
+      if (res.data.success) {
+        startResendCountdown();
+        toast("OTP Resent", {
+          description: "A new verification code has been sent to your email.",
+        });
+      } else {
+        toast.warning("Error", {
+          description: res.data.message || "Failed to resend OTP.",
+        });
+      }
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } catch (error: any) {
+      toast.warning("Error", {
+        description: error.response?.data?.message || "Failed to resend OTP.",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  const startResendCountdown = () => {
+    setResendDisabled(true);
+    setCountdown(30);
+
+    const timer = setInterval(() => {
+      setCountdown((prev) => {
+        if (prev <= 1) {
+          clearInterval(timer);
+          setResendDisabled(false);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+  };
   return (
     <div className="max-w-md mx-auto p-6 bg-white rounded-lg shadow-md">
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+        <form
+          onSubmit={form.handleSubmit(onSubmit, (errors) => {
+            console.log("Validation failed", errors);
+          })}
+          className="space-y-4"
+        >
           <h2 className="text-3xl font-bold justify-center flex">Sign in</h2>
           <p className="text-muted-foreground  flex justify-center text-sm">
             Please login to continue to your account
@@ -73,36 +179,71 @@ export default function SignInForm() {
               </FormItem>
             )}
           />
-          <FormField
-            control={form.control}
-            name="otp"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>OTP</FormLabel>
-                <FormControl>
-                  <InputOTP
-                    maxLength={6}
-                    {...field}
-                    className="w-full flex gap-2"
-                  >
-                    <InputOTPGroup className="flex w-full gap-2">
-                      {[...Array(6)].map((_, i) => (
-                        <InputOTPSlot
-                          key={i}
-                          index={i}
-                          className="flex-1  h-10 text-center text-lg border rounded-md"
-                        />
-                      ))}
-                    </InputOTPGroup>
-                  </InputOTP>
-                </FormControl>
-                <FormMessage />
-              </FormItem>
+          {otpSent && (
+            <div className="space-y-4">
+              <FormField
+                control={form.control}
+                name="otp"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Enter Verification Code</FormLabel>
+                    <FormControl>
+                      <InputOTP
+                        maxLength={6}
+                        value={field.value}
+                        onChange={field.onChange}
+                      >
+                        <InputOTPGroup className="flex w-full gap-2">
+                          {[...Array(6)].map((_, i) => (
+                            <InputOTPSlot
+                              key={i}
+                              index={i}
+                              className="flex-1 h-10 text-center text-lg border rounded-md"
+                            />
+                          ))}
+                        </InputOTPGroup>
+                      </InputOTP>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <div className="text-center">
+                <Button
+                  type="button"
+                  variant="link"
+                  onClick={handleResendOTP}
+                  disabled={resendDisabled || isLoading}
+                  className="text-sm text-[#367AFF]"
+                >
+                  {resendDisabled
+                    ? `Resend OTP in ${countdown}s`
+                    : "Didn't receive code? Resend"}
+                </Button>
+              </div>
+            </div>
+          )}
+          <Button
+            type="submit"
+            disabled={isLoading}
+            className="w-full bg-[#367AFF] hover:bg-blue-400 cursor-pointer"
+          >
+            {isLoading ? (
+              <div className="flex items-center justify-center gap-2">
+                <Image
+                  src="/loader.svg"
+                  alt="loader"
+                  width={24}
+                  height={24}
+                  className="animate-spin"
+                />
+                <span>Loading...</span>
+              </div>
+            ) : otpSent ? (
+              "Verify OTP"
+            ) : (
+              "Get OTP"
             )}
-          />
-
-          <Button type="submit" className="w-full bg-[#367AFF]">
-            Get OTP
           </Button>
 
           <p className="text-sm text-center">

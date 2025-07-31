@@ -5,19 +5,20 @@ import { User } from "@/models/user";
 
 export async function POST(req: Request) {
   try {
-    console.log("hello"); // This should now appear
     await connectDB();
 
     const body = await req.json();
-    console.log("Request body:", body);
+    const { email, code, name, dob, action } = body;
 
-    const { email, code, name, dob } = body;
+    if (!email || !code || !action) {
+      return NextResponse.json(
+        { success: false, message: "Missing required fields" },
+        { status: 400 }
+      );
+    }
 
-    console.log("Looking for OTP with email:", email, "and code:", code);
-
+    // Find OTP entry
     const otpEntry = await otp.findOne({ email, code });
-    console.log("OTP entry found:", otpEntry);
-
     if (!otpEntry) {
       return NextResponse.json(
         { success: false, message: "Invalid or expired OTP" },
@@ -26,14 +27,37 @@ export async function POST(req: Request) {
     }
     await otp.deleteOne({ _id: otpEntry._id });
 
-    const user = await User.create({ name, email, dob });
-    console.log("User created:", user);
-
-    console.log("OTP verified successfully");
-    return NextResponse.json({
-      success: true,
-      message: "OTP verified and account created",
-    });
+    if (action === "signup") {
+      if (!name || !dob) {
+        return NextResponse.json(
+          { success: false, message: "Name and DOB are required for signup" },
+          { status: 400 }
+        );
+      }
+      const existingUser = await User.findOne({ email });
+      if (existingUser) {
+        return NextResponse.json(
+          { success: false, message: "User already exists" },
+          { status: 400 }
+        );
+      }
+      const user = await User.create({ name, email, dob });
+      return NextResponse.json({
+        success: true,
+        message: "OTP verified and account created",
+        user,
+      });
+    } else if (action === "signin") {
+      return NextResponse.json({
+        success: true,
+        message: "OTP verified, login successful",
+      });
+    } else {
+      return NextResponse.json(
+        { success: false, message: "Invalid action" },
+        { status: 400 }
+      );
+    }
   } catch (error) {
     console.error("Error in verify-otp:", error);
     return NextResponse.json(

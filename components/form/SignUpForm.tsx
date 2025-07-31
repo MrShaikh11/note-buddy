@@ -24,41 +24,16 @@ import {
 } from "@/components/ui/popover";
 import { Input } from "@/components/ui/input";
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import {
   InputOTP,
   InputOTPGroup,
   InputOTPSlot,
 } from "@/components/ui/input-otp";
-import { Toaster } from "@/components/ui/sonner";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-
-// Combined schema with conditional OTP validation
-const signUpSchema = z
-  .object({
-    name: z.string().min(2, { message: "Name must be at least 2 characters." }),
-    email: z.string().email({ message: "Invalid email address." }),
-    dob: z.date({ message: "A date of birth is required." }),
-    otp: z.string().optional(),
-  })
-  .refine(
-    (data) => {
-      // If we're in OTP mode, validate the OTP field
-      if (data.otp !== undefined && data.otp !== "") {
-        return data.otp.length === 6 && /^\d+$/.test(data.otp);
-      }
-      return true;
-    },
-    {
-      message: "OTP must be exactly 6 digits.",
-      path: ["otp"],
-    }
-  );
-
-// Define baseSchema for validation
-const baseSchema = signUpSchema.omit({ otp: true });
+import { signUpSchema } from "@/lib/validation";
 
 type SignUpFormData = z.infer<typeof signUpSchema>;
 
@@ -68,12 +43,6 @@ export default function SignUpForm() {
   const [resendDisabled, setResendDisabled] = useState(false);
   const [countdown, setCountdown] = useState(0);
   const router = useRouter();
-
-  // Use the appropriate schema based on whether OTP has been sent
-  const schema = useMemo(
-    () => (otpSent ? signUpSchema : signUpSchema),
-    [otpSent]
-  );
 
   const form = useForm<SignUpFormData>({
     resolver: zodResolver(signUpSchema),
@@ -90,33 +59,33 @@ export default function SignUpForm() {
 
     try {
       if (!otpSent) {
-        // First step: Send OTP
-          const res = await axios.post("/api/send-otp", {
-            email: values.email,
-            name: values.name,
-            dob: values.dob,
-          });
+        // send OTP
+        const res = await axios.post("/api/send-otp", {
+          email: values.email,
+          name: values.name,
+          dob: values.dob,
+        });
 
-          if (res.data.success) {
-            setOtpSent(true);
-            startResendCountdown();
-            toast("OTP Sent", {
-              description: "Please check your email for the verification code.",
-            });
-            <Toaster />;
-          } else {
-            toast.warning("Error", {
-              description: res.data.message || "Failed to send OTP.",
-            });
-          }
+        if (res.data.success) {
+          setOtpSent(true);
+          startResendCountdown();
+          toast("OTP Sent", {
+            description: "Please check your email for the verification code.",
+          });
+        } else {
+          toast.warning("Error", {
+            description: res.data.message || "Failed to send OTP.",
+          });
+        }
       } else {
         console.log("kya ree");
-        // Second step: Verify OTP and complete registration
+        // verify OTP
         const res = await axios.post("/api/verify-otp", {
           email: values.email,
           code: values.otp, // Changed from 'otp' to 'code' to match your API
           name: values.name,
           dob: values.dob,
+          action: "signup",
         });
 
         console.log("Verify OTP response:", res.data);
