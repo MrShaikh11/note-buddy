@@ -4,15 +4,20 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Trash2 } from "lucide-react";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 export default function HomePage() {
   const [notes, setNotes] = useState(["Note 1", "Note 2"]);
-
+  const router = useRouter();
   const handleDelete = (index: number) => {
     const updated = [...notes];
     updated.splice(index, 1);
     setNotes(updated);
+  };
+  const handleSignOut = async () => {
+    await fetch("/api/logout", { method: "POST" });
+    router.push("/sign-in");
   };
 
   return (
@@ -23,7 +28,11 @@ export default function HomePage() {
           <Image src="/logo.svg" alt="Logo" width={32} height={32} />
           <h1 className="text-lg font-semibold">Dashboard</h1>
         </div>
-        <Button variant="link" className="text-blue-600 p-0 h-auto">
+        <Button
+          variant="link"
+          className="text-blue-600 p-0 h-auto cursor-pointer"
+          onClick={handleSignOut}
+        >
           Sign Out
         </Button>
       </div>
