@@ -18,8 +18,15 @@
 ## 📸 Screenshots
 
 Example:
-![Login Page](/screenshots/login.png)
-![Notes Dashboard](/screenshots/dashboard.png)
+Login Page
+<img width="1366" height="768" alt="Screenshot (80)" src="https://github.com/user-attachments/assets/c53e2ad6-6026-433b-b2ca-e5b06c86f540" />
+
+Sign Up Page
+<img width="1366" height="768" alt="Screenshot (82)" src="https://github.com/user-attachments/assets/bf508139-be08-40e2-8d56-3b00cff39483" />
+
+Home Page
+<img width="1366" height="768" alt="Screenshot (83)" src="https://github.com/user-attachments/assets/21a8dc8d-ca15-45f0-a962-d1ab57602bcc" />
+
 
 ---
 
