@@ -34,6 +34,7 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { signUpSchema } from "@/lib/validation";
+import { signIn } from "next-auth/react";
 
 type SignUpFormData = z.infer<typeof signUpSchema>;
 
@@ -342,6 +343,22 @@ export default function SignUpForm() {
           </p>
         </form>
       </Form>
+
+      <div className="flex items-center gap-2 my-4">
+        <hr className="flex-grow border-gray-300" />
+        <span className="text-sm text-gray-500">or</span>
+        <hr className="flex-grow border-gray-300" />
+      </div>
+
+      {/* Google Sign Up */}
+      <Button
+        variant="outline"
+        className="w-full flex items-center cursor-pointer hover:shadow-2xl justify-center gap-2"
+        onClick={() => signIn("google", { callbackUrl: "/" })}
+      >
+        <Image src="/google-icon.svg" alt="Google" width={20} height={20} />
+        Sign up with Google
+      </Button>
     </div>
   );
 }
